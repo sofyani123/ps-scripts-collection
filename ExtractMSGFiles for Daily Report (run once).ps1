@@ -171,3 +171,28 @@ $outlook.Quit()
 Write-Host "Attachment extraction and verification completed."
 Write-Host "Verification report saved to $verificationReport"
 Write-Host "Marker file created at $markerFile"
+
+# Clear .msg files after extraction
+$excludePatterns = @(
+    "BCASGFPVIEDB01 nightly DB backup SUCCESS",
+    "BCCSGFTVIEDB01 nightly DB backup SUCCESS",
+    "WSUS: New Update(s) Alert From BCASGFPSCCM01"
+)
+
+foreach ($file in $msgFiles) {
+    $shouldExclude = $false
+    foreach ($pattern in $excludePatterns) {
+        if ($file.Name -like "*$pattern*") {
+            $shouldExclude = $true
+            break
+        }
+    }
+    if (-not $shouldExclude) {
+        try {
+            Remove-Item -Path $file.FullName -Force
+            Write-Host "Deleted $($file.Name)"
+        } catch {
+            Write-Warning "Could not delete $($file.Name): $_"
+        }
+    }
+}
